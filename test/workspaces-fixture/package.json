@@ -1,0 +1,49 @@
+{
+  "workspaces": [
+    "workspaces/contact",
+    "workspaces/scanner",
+    "workspaces/tarball",
+    "workspaces/mama",
+    "workspaces/tree-walker",
+    "workspaces/conformance",
+    "workspaces/npm-types",
+    "workspaces/i18n",
+    "workspaces/rc",
+    "workspaces/utils",
+    "workspaces/flags",
+    "workspaces/fs-walk",
+    "workspaces/github",
+    "workspaces/gitlab",
+    "workspaces/opencode-nodesecure"
+  ],
+  "scripts": {
+    "build": "npm run build --ws --if-present",
+    "test": "npm run test --ws --if-present",
+    "test-types": "npm run test-types --ws --if-present",
+    "lint": "eslint workspaces",
+    "check": "npm run lint && npm run test && npm run test-types",
+    "ci:publish": "changeset publish",
+    "ci:version": "changeset version",
+    "clean": "clear-ts-build"
+  },
+  "author": "NodeSecure",
+  "license": "MIT",
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.29.4",
+    "@openally/config.eslint": "^2.4.2",
+    "@openally/config.typescript": "1.3.0",
+    "@slimio/is": "^2.0.0",
+    "@types/node": "^26.0.0",
+    "@types/pacote": "^11.1.8",
+    "@types/semver": "^7.5.8",
+    "c8": "^11.0.0",
+    "pkg-ok": "^4.0.0",
+    "tsd": "^0.33.0",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "fail-ws",
+  "private": true,
+  "scripts": {
+    "test": "node run.mjs"
+  }
+}

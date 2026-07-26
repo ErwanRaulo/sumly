@@ -1,0 +1,45 @@
+{
+  "name": "sumlyzer",
+  "version": "0.1.0",
+  "description": "Run every npm workspace's test script, only show output for the ones that fail, and finish with an aggregated pass/fail summary.",
+  "type": "module",
+  "bin": {
+    "sumlyzer": "bin/sumlyzer.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "test": "node --test \"./test/*.spec.mjs\""
+  },
+  "keywords": [
+    "npm",
+    "test reporter",
+    "test summary",
+    "workspaces test summary",
+    "node test",
+    "test-runner",
+    "cli",
+    "fail-fast",
+    "summary"
+  ],
+  "author": "Erwan Raulo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ErwanRaulo/sumlyzer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ErwanRaulo/sumlyzer/issues"
+  },
+  "homepage": "https://github.com/ErwanRaulo/sumlyzer#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}

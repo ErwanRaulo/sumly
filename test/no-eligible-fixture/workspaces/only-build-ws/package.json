@@ -1,0 +1,7 @@
+{
+  "name": "only-build-ws",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"process.exit(0)\""
+  }
+}

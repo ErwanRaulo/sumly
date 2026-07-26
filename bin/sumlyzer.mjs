@@ -15,8 +15,8 @@ try {
   }));
 }
 catch (error) {
-  if (error.code === "ERR_PARSE_ARGS_UNKNOWN_OPTION") {
-    console.error(`${error.message}. Run "sumlyzer --help" for usage.`);
+  if (error.code?.startsWith("ERR_PARSE_ARGS")) {
+    console.info(`${error.message}. Run "sumlyzer --help" for usage.`);
   }
   process.exit(1);
 }

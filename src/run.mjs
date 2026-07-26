@@ -28,10 +28,8 @@ export function workspaceName(wsPath) {
   return (wsPath ?? "").replace(/^workspaces[\\/]/, "");
 }
 
-function listWorkspaces(root, scriptName) {
-  const rootPkg = readJson(path.join(root, "package.json"));
-
-  return (rootPkg.workspaces ?? []).filter((wsPath) => {
+function listEligibleWorkspaces(root, workspaces, scriptName) {
+  return workspaces.filter((wsPath) => {
     const pkgFile = path.join(root, wsPath, "package.json");
     try {
       return Boolean(readJson(pkgFile).scripts?.[scriptName]);
@@ -132,10 +130,18 @@ function summaryRow(workspace, status, duration, counts) {
 }
 
 export async function main({ root, scriptName, ff }) {
-  const workspaces = listWorkspaces(root, scriptName);
+
+  const { workspaces } = readJson(path.join(root, "package.json"));
+
+  if (!workspaces || workspaces.length === 0) {
+    console.info("Your project does not have any workspaces.");
+    process.exit(1);
+  }
+
+  const workspacesToRun = listEligibleWorkspaces(root, workspaces, scriptName);
   const results = [];
 
-  for (const wsPath of workspaces) {
+  for (const wsPath of workspacesToRun) {
     const name = workspaceName(wsPath);
     process.stdout.write(dim(`running ${name}\n`));
 
@@ -167,7 +173,7 @@ export async function main({ root, scriptName, ff }) {
   }
 
   const failed = results.filter((result) => result.exitCode !== 0);
-  const skipped = workspaces.slice(results.length);
+  const skipped = workspacesToRun.slice(results.length);
 
   console.log(bold("\nSummary"));
   console.table([

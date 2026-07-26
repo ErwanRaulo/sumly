@@ -1,0 +1,7 @@
+{
+  "name": "no-eligible-fixture",
+  "private": true,
+  "workspaces": [
+    "workspaces/only-build-ws"
+  ]
+}

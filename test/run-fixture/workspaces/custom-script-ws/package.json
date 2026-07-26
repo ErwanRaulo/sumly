@@ -1,0 +1,7 @@
+{
+  "name": "custom-script-ws",
+  "private": true,
+  "scripts": {
+    "verify": "node run.mjs"
+  }
+}

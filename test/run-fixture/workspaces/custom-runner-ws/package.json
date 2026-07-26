@@ -1,0 +1,7 @@
+{
+  "name": "custom-runner-ws",
+  "private": true,
+  "scripts": {
+    "test": "node run.mjs"
+  }
+}

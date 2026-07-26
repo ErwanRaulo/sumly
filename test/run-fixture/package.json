@@ -1,0 +1,10 @@
+{
+  "name": "run-fixture",
+  "private": true,
+  "workspaces": [
+    "workspaces/custom-script-ws",
+    "workspaces/fail-ws",
+    "workspaces/pass-ws",
+    "workspaces/custom-runner-ws"
+  ]
+}
