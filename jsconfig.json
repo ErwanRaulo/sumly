@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "checkJs": false,
+    "types": ["node"]
+  },
+  "include": ["bin/**/*.mjs", "src/**/*.mjs", "test/**/*.mjs"],
+  "exclude": ["node_modules"]
+}

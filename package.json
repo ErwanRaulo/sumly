@@ -38,5 +38,8 @@
   "bugs": {
     "url": "https://github.com/ErwanRaulo/sumlyzer/issues"
   },
-  "homepage": "https://github.com/ErwanRaulo/sumlyzer#readme"
+  "homepage": "https://github.com/ErwanRaulo/sumlyzer#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
 }
