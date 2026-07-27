@@ -1,8 +1,15 @@
-# Sumlyzer
+<p align="center">
+  <img src="https://github.com/ErwanRaulo/sumlyzer/blob/main/logo.png?raw=true" alt="Sumlyzer logo" width="140" />
+</p>
 
-[![npm version](https://img.shields.io/npm/v/sumlyzer.svg)](https://www.npmjs.com/package/sumlyzer)
-[![node engine](https://img.shields.io/node/v/sumlyzer.svg)](https://www.npmjs.com/package/sumlyzer)
-[![license](https://img.shields.io/npm/l/sumlyzer.svg)](./LICENSE)
+<h1 align="center">Sumlyzer</h1>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/sumlyzer"><img src="https://img.shields.io/npm/v/sumlyzer.svg" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/sumlyzer"><img src="https://img.shields.io/npm/dm/sumlyzer.svg" alt="npm downloads" /></a>
+  <a href="https://www.npmjs.com/package/sumlyzer"><img src="https://img.shields.io/node/v/sumlyzer.svg" alt="node engine" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/npm/l/sumlyzer.svg" alt="license" /></a>
+</p>
 
 Run every npm workspace's test script, one by one. Passing workspaces output
 to a single line; failing ones print only the relevant failure detail.
