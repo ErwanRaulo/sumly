@@ -17,6 +17,8 @@
   },
   "scripts": {
     "test": "node --test \"./test/*.spec.mjs\"",
+    "test:coverage": "c8 --reporter=text --reporter=lcov --check-coverage --lines 95 --functions 95 --statements 95 --branches 85 node --test \"./test/*.spec.mjs\"",
+    "security-scan": "node scripts/security-scan.mjs",
     "postversion": "git push && git push --tags",
     "prepublishOnly": "npm test",
     "release": "npm publish --dry-run"
@@ -53,6 +55,8 @@
   },
   "homepage": "https://github.com/ErwanRaulo/sumlyzer#readme",
   "devDependencies": {
-    "@types/node": "^26.1.1"
+    "@nodesecure/js-x-ray": "^16.0.0",
+    "@types/node": "^26.1.1",
+    "c8": "^12.0.0"
   }
 }
