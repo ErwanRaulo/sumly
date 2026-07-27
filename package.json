@@ -16,7 +16,10 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "test": "node --test \"./test/*.spec.mjs\""
+    "test": "node --test \"./test/*.spec.mjs\"",
+    "postversion": "git push && git push --tags",
+    "prepublishOnly": "npm test",
+    "release": "npm publish --dry-run"
   },
   "keywords": [
     "npm",
@@ -27,9 +30,19 @@
     "test-runner",
     "cli",
     "fail-fast",
-    "summary"
+    "summary",
+    "npm-workspaces",
+    "monorepo",
+    "test-reporter",
+    "node-test",
+    "node:test",
+    "test-summary",
+    "ci"
   ],
-  "author": "Erwan Raulo",
+  "author": {
+    "name": "Erwan Raulo",
+    "url": "https://github.com/ErwanRaulo"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",

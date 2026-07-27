@@ -1,8 +1,17 @@
 # Sumlyzer
 
+[![npm version](https://img.shields.io/npm/v/sumlyzer.svg)](https://www.npmjs.com/package/sumlyzer)
+[![node engine](https://img.shields.io/node/v/sumlyzer.svg)](https://www.npmjs.com/package/sumlyzer)
+[![license](https://img.shields.io/npm/l/sumlyzer.svg)](./LICENSE)
+
 Run every npm workspace's test script, one by one. Passing workspaces output
 to a single line; failing ones print only the relevant failure detail.
 Ends with an aggregated pass/fail summary table, so nothing scrolls out of the terminal.
+
+## Requirements
+
+- Node.js >= 22.0.0
+- An npm workspaces project (`package.json` with a `workspaces` field)
 
 ## Scope
 
@@ -35,10 +44,102 @@ Options:
 | `--ff` | off | fail fast: stop at the first failing workspace |
 | `-h, --help` | | print usage |
 
+Exit code is `1` if any workspace fails (or if the project has no
+workspaces), `0` otherwise — wire it straight into CI without extra parsing.
+
 ## Example
 
-![description](https://github.com/ErwanRaulo/sumlyzer/blob/main/example.png?raw=true)
+```
+running contact
+✓ contact 2.6s (35/35 tests)
+running scanner
+✓ scanner 10.1s (161/162 tests)
+running tarball
+✓ tarball 1.8s (77/77 tests)
+running mama
+✓ mama 1.2s (85/85 tests)
+running tree-walker
+✓ tree-walker 3.0s (26/26 tests)
+running conformance
+✓ conformance 1.1s (35/35 tests)
+running i18n
+✓ i18n 1.1s (19/19 tests)
+running rc
+✓ rc 4.1s (28/28 tests)
+running utils
+✓ utils 1.1s (30/30 tests)
+running flags
+✓ flags 1.1s (9/9 tests)
+running fs-walk
+✓ fs-walk 1.1s (3/3 tests)
+running github
+✓ github 2.9s (8/8 tests)
+running gitlab
+✓ gitlab 4.3s (8/8 tests)
 
+Summary
+
+┌─────────┬────────────────┬──────────┬────────────┬────────────────┬─────────┬────────┬────────┐
+│ (index) │ workspace      │ status   │ duration   │ testsDuration  │ tests   │ pass   │ fail   │
+├─────────┼────────────────┼──────────┼────────────┼────────────────┼─────────┼────────┼────────┤
+│ 0       │ 'contact'      │ 'PASS'   │ '2.6s'     │ '0.9s'         │ '35'    │ '35'   │ '0'    │
+│ 1       │ 'scanner'      │ 'PASS'   │ '10.1s'    │ '8.7s'         │ '162'   │ '161'  │ '0'    │
+│ 2       │ 'tarball'      │ 'PASS'   │ '1.8s'     │ '0.7s'         │ '77'    │ '77'   │ '0'    │
+│ 3       │ 'mama'         │ 'PASS'   │ '1.2s'     │ '0.1s'         │ '85'    │ '85'   │ '0'    │
+│ 4       │ 'tree-walker'  │ 'PASS'   │ '3.0s'     │ '2.0s'         │ '26'    │ '26'   │ '0'    │
+│ 5       │ 'conformance'  │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '35'    │ '35'   │ '0'    │
+│ 6       │ 'i18n'         │ 'PASS'   │ '1.1s'     │ '0.2s'         │ '19'    │ '19'   │ '0'    │
+│ 7       │ 'rc'           │ 'PASS'   │ '4.1s'     │ '0.6s'         │ '28'    │ '28'   │ '0'    │
+│ 8       │ 'utils'        │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '30'    │ '30'   │ '0'    │
+│ 9       │ 'flags'        │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '9'     │ '9'    │ '0'    │
+│ 10      │ 'fs-walk'      │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '3'     │ '3'    │ '0'    │
+│ 11      │ 'github'       │ 'PASS'   │ '2.9s'     │ '2.0s'         │ '8'     │ '8'    │ '0'    │
+│ 12      │ 'gitlab'       │ 'PASS'   │ '4.3s'     │ '3.3s'         │ '8'     │ '8'    │ '0'    │
+└─────────┴────────────────┴──────────┴────────────┴────────────────┴─────────┴────────┴────────┘
+
+13/13 workspaces passed.
+```
+
+### On failure
+
+Only the failing workspace prints its detail; passing ones stay collapsed to a single line.
+
+```
+running contact
+✓ contact 2.6s (35/35 tests)
+running scanner
+✓ scanner 10.1s (161/162 tests)
+running utils
+
+✗ utils failed
+test at test/format.spec.mjs:12:3
+✖ formats negative numbers (3ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal
+  + actual - expected
+
+  + '-1'
+  - '(1)'
+
+✗ utils 1.3s, exit code 1
+
+running flags
+✓ flags 1.1s (9/9 tests)
+
+Summary
+
+┌─────────┬────────────┬──────────┬────────────┬────────────────┬─────────┬────────┬────────┐
+│ (index) │ workspace  │ status   │ duration   │ testsDuration  │ tests   │ pass   │ fail   │
+├─────────┼────────────┼──────────┼────────────┼────────────────┼─────────┼────────┼────────┤
+│ 0       │ 'contact'  │ 'PASS'   │ '2.6s'     │ '0.9s'         │ '35'    │ '35'   │ '0'    │
+│ 1       │ 'scanner'  │ 'PASS'   │ '10.1s'    │ '8.7s'         │ '162'   │ '161'  │ '0'    │
+│ 2       │ 'utils'    │ 'FAIL'   │ '1.3s'     │ '0.1s'         │ '30'    │ '29'   │ '1'    │
+│ 3       │ 'flags'    │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '9'     │ '9'    │ '0'    │
+└─────────┴────────────┴──────────┴────────────┴────────────────┴─────────┴────────┴────────┘
+
+1/4 workspace(s) failed:
+  utils
+    ✖ formats negative numbers
+```
 
 ## Why
 
@@ -47,6 +148,10 @@ no aggregated summary and no way to fail fast early. An early failure just
 scrolls off screen once later workspaces print their own output. Turborepo
 has the [same open issue](https://github.com/vercel/turborepo/issues/1368).
 sumlyzer is a small, dependency-free tool that solves just this.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, conventions, and how to submit changes.
 
 ## License
 
