@@ -1,0 +1,9 @@
+{
+  "name": "junit-fixture",
+  "private": true,
+  "workspaces": [
+    "workspaces/pass-ws",
+    "workspaces/fail-ws",
+    "workspaces/nested-ws"
+  ]
+}

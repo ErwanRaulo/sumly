@@ -49,6 +49,7 @@ Options:
 | --- | --- | --- |
 | `--script <name>` | `test` | npm script to run per workspace |
 | `--ff` | off | fail fast: stop at the first failing workspace |
+| `--junit <path>` | off | write an aggregated JUnit XML report to `<path>` |
 | `-h, --help` | | print usage |
 
 Exit code is `1` if any workspace fails (or if the project has no
@@ -146,6 +147,28 @@ Summary
 1/4 workspace(s) failed:
   utils
     ✖ formats negative numbers
+```
+
+### JUnit report
+
+`--junit <path>` writes a single aggregated JUnit XML report to `<path>`, merging
+every workspace's own `node:test` results. Each workspace runs with `node:test`'s
+built-in `junit` reporter enabled alongside the terminal one, and sumlyzer combines
+the resulting files into one document, prefixing every `<testsuite>` name with the
+workspace it came from so CI test-report UIs (GitLab, Jenkins, Azure DevOps, ...)
+can tell them apart. If `<path>` is an existing directory, the report is written
+to `<path>/junit.xml`:
+
+```
+npx sumlyzer --junit reports/junit.xml
+npx sumlyzer --junit reports/           # writes reports/junit.xml
+```
+
+```xml
+<testsuites>
+  <testsuite name="contact › contact tests">...</testsuite>
+  <testsuite name="scanner">...</testsuite>
+</testsuites>
 ```
 
 ## Why

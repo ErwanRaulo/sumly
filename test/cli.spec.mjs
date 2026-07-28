@@ -1,27 +1,34 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+
+import { assertWellFormedXml } from "./xmlAssertions.mjs";
 
 const execFileAsync = promisify(execFile);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BIN = path.join(ROOT, "bin", "sumlyzer.mjs");
-const PROJECT_WITH_WORKSPACES = path.join(ROOT, "test", "workspaces-fixture");
-const PROJECT_WITHOUT_WORKSPACES = path.join(ROOT, "test", "no-workspaces-fixture");
-const RUN_FIXTURE = path.join(ROOT, "test", "run-fixture");
-const NO_ELIGIBLE_FIXTURE = path.join(ROOT, "test", "no-eligible-fixture");
-const EMPTY_WORKSPACES_FIXTURE = path.join(ROOT, "test", "empty-workspaces-fixture");
+
+const TEST_PATH = path.join(ROOT, "test");
+const PROJECT_WITH_WORKSPACES = path.join(TEST_PATH, "workspaces-fixture");
+const PROJECT_WITHOUT_WORKSPACES = path.join(TEST_PATH, "no-workspaces-fixture");
+const RUN_FIXTURE = path.join(TEST_PATH, "run-fixture");
+const NO_ELIGIBLE_FIXTURE = path.join(TEST_PATH, "no-eligible-fixture");
+const EMPTY_WORKSPACES_FIXTURE = path.join(TEST_PATH, "empty-workspaces-fixture");
+const JUNIT_FIXTURE = path.join(TEST_PATH, "junit-fixture");
 
 async function runCli(args, cwd) {
   try {
-    const { stdout } = await execFileAsync("node", [BIN, ...args], { cwd });
-    return { stdout, code: 0 };
+    const { stdout, stderr } = await execFileAsync("node", [BIN, ...args], { cwd });
+    return { stdout, stderr, code: 0 };
   }
   catch (error) {
-    return { stdout: error.stdout, code: error.code };
+    return { stdout: error.stdout, stderr: error.stderr, code: error.code };
   }
 }
 
@@ -32,6 +39,7 @@ describe("sumlyzer CLI behaviors", () => {
     assert.match(stdout, /sumlyzer \[options\]/);
     assert.match(stdout, /--script <name>/);
     assert.match(stdout, /--ff/);
+    assert.match(stdout, /--junit <path>/);
     assert.match(stdout, /-h, --help/);
   });
 
@@ -165,12 +173,92 @@ describe("sumlyzer run behavior", () => {
     assert.match(stdout, /1\/1 workspaces passed\./);
   });
 
+  it("--junit warns when a workspace's script never produced a junit file (e.g. --script isn't node:test)", async () => {
+    const outDir = await mkdtemp(path.join(tmpdir(), "sumlyzer-junit-cli-"));
+    const outFile = path.join(outDir, "report.xml");
+
+    try {
+      const { stdout, code } = await runCli(["--script", "verify", "--junit", outFile], RUN_FIXTURE);
+
+      assert.equal(code, 0);
+      assert.match(stdout, /1 workspace\(s\) missing from the JUnit report: custom-script-ws/);
+
+      const report = await readFile(outFile, "utf8");
+      assertWellFormedXml(report);
+    }
+    finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
+  });
+
   it("prints an empty 0/0 summary when no workspace has the target script, instead of crashing", async () => {
     const { stdout, code } = await runCli([], NO_ELIGIBLE_FIXTURE);
 
     assert.equal(code, 0);
     assert.match(stdout, /0\/0 workspaces passed\./);
     assert.doesNotMatch(stdout, /Your project does not have any workspaces\./);
+  });
+
+  it("--junit writes an aggregated JUnit report merging every workspace's testsuites", async () => {
+    const outDir = await mkdtemp(path.join(tmpdir(), "sumlyzer-junit-cli-"));
+    const outFile = path.join(outDir, "report.xml");
+
+    try {
+      const { code } = await runCli(["--junit", outFile], JUNIT_FIXTURE);
+
+      assert.equal(code, 1);
+
+      const report = await readFile(outFile, "utf8");
+      assert.match(report, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+      assert.match(report, /<testsuites>[\s\S]*<\/testsuites>/);
+      assert.match(report, /<testsuite name="pass-ws">[\s\S]*<testcase name="adds numbers"/);
+      assert.match(report, /<testsuite name="fail-ws">[\s\S]*<testcase name="breaks"/);
+      assert.match(report, /<failure/);
+      assertWellFormedXml(report);
+    }
+    finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it("--junit keeps nested describe() blocks as nested <testsuite> elements without unbalancing the merged XML", async () => {
+    const outDir = await mkdtemp(path.join(tmpdir(), "sumlyzer-junit-cli-"));
+    const outFile = path.join(outDir, "report.xml");
+
+    try {
+      await runCli(["--junit", outFile], JUNIT_FIXTURE);
+
+      const report = await readFile(outFile, "utf8");
+      assert.match(report, /<testsuite name="nested-ws › outer suite"[^>]*>[\s\S]*<testsuite name="inner suite"[^>]*>/);
+      assertWellFormedXml(report);
+    }
+    finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it("--junit writes to <dir>/junit.xml when <path> is an existing directory", async () => {
+    const outDir = await mkdtemp(path.join(tmpdir(), "sumlyzer-junit-cli-"));
+
+    try {
+      const { code } = await runCli(["--junit", outDir], JUNIT_FIXTURE);
+
+      assert.equal(code, 1);
+
+      const report = await readFile(path.join(outDir, "junit.xml"), "utf8");
+      assert.match(report, /<testsuite name="pass-ws">/);
+    }
+    finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it("prints a friendly message instead of a stack trace when the JUnit report can't be written", async () => {
+    const { stderr, code } = await runCli(["--junit", "/no-such-directory/report.xml"], JUNIT_FIXTURE);
+
+    assert.equal(code, 1);
+    assert.match(stderr, /Could not write JUnit report to "\/no-such-directory\/report.xml"/);
+    assert.doesNotMatch(stderr, /at async|node:internal/);
   });
 });
 

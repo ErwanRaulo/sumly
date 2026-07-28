@@ -10,6 +10,7 @@ try {
     options: {
       ff: { type: "boolean", default: false },
       script: { type: "string", default: "test" },
+      junit: { type: "string" },
       help: { type: "boolean", short: "h", default: false }
     }
   }));
@@ -31,9 +32,10 @@ failure detail. Ends with an aggregated pass/fail summary table.
 Options:
   --script <name>  npm script to run per workspace (default: "test")
   --ff             fail fast: stop at the first failing workspace
+  --junit <path>   write an aggregated JUnit XML report to <path>
   -h, --help       show this help
 `);
   process.exit(0);
 }
 
-await main({ root: path.resolve(process.cwd()), scriptName: values.script, ff: values.ff });
+await main({ root: path.resolve(process.cwd()), scriptName: values.script, ff: values.ff, junitPath: values.junit });
