@@ -54,6 +54,8 @@ Options:
 
 Exit code is `1` if any workspace fails (or if the project has no
 workspaces), `0` otherwise — wire it straight into CI without extra parsing.
+This also applies when `--junit` can't write its report (e.g. an invalid
+`<path>`): the exit code is `1` even if every workspace's tests passed.
 
 ## Example
 
@@ -86,7 +88,6 @@ running gitlab
 ✓ gitlab 4.3s (8/8 tests)
 
 Summary
-
 ┌─────────┬────────────────┬──────────┬────────────┬────────────────┬─────────┬────────┬────────┐
 │ (index) │ workspace      │ status   │ duration   │ testsDuration  │ tests   │ pass   │ fail   │
 ├─────────┼────────────────┼──────────┼────────────┼────────────────┼─────────┼────────┼────────┤
@@ -110,7 +111,7 @@ Summary
 
 ### On failure
 
-Only the failing workspace prints its detail; passing ones stay collapsed to a single line.
+Only the failing workspace prints its detail and passing ones stay collapsed to a single line.
 
 ```
 running contact
@@ -134,7 +135,6 @@ running flags
 ✓ flags 1.1s (9/9 tests)
 
 Summary
-
 ┌─────────┬────────────┬──────────┬────────────┬────────────────┬─────────┬────────┬────────┐
 │ (index) │ workspace  │ status   │ duration   │ testsDuration  │ tests   │ pass   │ fail   │
 ├─────────┼────────────┼──────────┼────────────┼────────────────┼─────────┼────────┼────────┤
@@ -171,13 +171,17 @@ npx sumlyzer --junit reports/           # writes reports/junit.xml
 </testsuites>
 ```
 
+A workspace whose script never produces a junit file (for example,
+`--script` points at something that isn't `node:test`, or the workspace crashed
+before it could write one) is left out of the aggregated report and sumlyzer
+prints a warning naming it.
+
 ## Why
 
 `npm run test --workspaces --if-present` runs every workspace but gives you
 no aggregated summary and no way to fail fast early. An early failure just
-scrolls off screen once later workspaces print their own output. Turborepo
-has the [same open issue](https://github.com/vercel/turborepo/issues/1368).
-sumlyzer is a small, dependency-free tool that solves just this.
+scrolls off screen once later workspaces print their own output. sumlyzer is
+a small, dependency-free tool that solves just this.
 
 ## Contributing
 
