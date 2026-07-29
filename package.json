@@ -39,7 +39,10 @@
     "node-test",
     "node:test",
     "test-summary",
-    "ci"
+    "ci",
+    "junit",
+    "junit-xml",
+    "github-actions"
   ],
   "author": {
     "name": "Erwan Raulo",
