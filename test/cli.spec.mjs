@@ -22,9 +22,14 @@ const NO_ELIGIBLE_FIXTURE = path.join(TEST_PATH, "no-eligible-fixture");
 const EMPTY_WORKSPACES_FIXTURE = path.join(TEST_PATH, "empty-workspaces-fixture");
 const JUNIT_FIXTURE = path.join(TEST_PATH, "junit-fixture");
 
-async function runCli(args, cwd) {
+async function runCli(args, cwd, env) {
+  // Avoid suite's own CI run setting GITHUB_ACTIONS=true, which would trigger the fold markers.
+  const childEnv = { ...process.env };
+  delete childEnv.GITHUB_ACTIONS;
+  Object.assign(childEnv, env);
+
   try {
-    const { stdout, stderr } = await execFileAsync("node", [BIN, ...args], { cwd });
+    const { stdout, stderr } = await execFileAsync("node", [BIN, ...args], { cwd, env: childEnv });
     return { stdout, stderr, code: 0 };
   }
   catch (error) {
@@ -157,6 +162,21 @@ describe("sumlyzer run behavior", () => {
 
     // regression guard: a workspace that never ran must not also be listed as PASS.
     assert.doesNotMatch(stdout, /pass-ws\W+PASS/);
+  });
+
+  it("on GitHub Actions, folds each workspace's full output behind group/endgroup instead of the plain format", async () => {
+    const { stdout, code } = await runCli([], RUN_FIXTURE, { GITHUB_ACTIONS: "true" });
+
+    assert.equal(code, 1);
+
+    assert.match(stdout, /::group::✓ pass-ws.*\(3\/3 tests\)/);
+    assert.match(stdout, /ℹ tests 3/); 
+    assert.match(stdout, /::group::✗ fail-ws.*\(2\/4 tests\)/);
+    assert.match(stdout, /✖ some assertion \(12\.3ms\)/);
+    assert.match(stdout, /::endgroup::/);
+
+    // the plain-format markers must NOT appear.
+    assert.doesNotMatch(stdout, /✗ fail-ws failed/);
   });
 
   it("--script switches which npm script is run and re-applies eligibility filtering", async () => {

@@ -53,7 +53,7 @@ Options:
 | `-h, --help` | | print usage |
 
 Exit code is `1` if any workspace fails (or if the project has no
-workspaces), `0` otherwise — wire it straight into CI without extra parsing.
+workspaces), `0` otherwise, wire it straight into CI without extra parsing.
 This also applies when `--junit` can't write its report (e.g. an invalid
 `<path>`): the exit code is `1` even if every workspace's tests passed.
 
@@ -175,6 +175,18 @@ A workspace whose script never produces a junit file (for example,
 `--script` points at something that isn't `node:test`, or the workspace crashed
 before it could write one) is left out of the aggregated report and sumlyzer
 prints a warning naming it.
+
+### GitHub Actions log folding
+
+On GitHub Actions (detected via `GITHUB_ACTIONS=true`), each workspace's full
+`node:test` output is wrapped in a collapsible `::group::`/`::endgroup::`
+section instead of the terminal's collapsed-line-or-failure-detail format.
+This is automatic, no flag needed, and keeps the job log short by default
+while still letting you expand any workspace, passing or failing, to see its
+full suite output. 
+
+No other CI provider is currently supported: GitHub is the
+only one whose log folding sumlyzer has actually verified end-to-end.
 
 ## Why
 

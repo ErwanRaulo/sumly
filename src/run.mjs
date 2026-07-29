@@ -124,8 +124,33 @@ async function runWorkspaceScript(root, wsPath, scriptName, junitDestPath) {
     durationMs: Date.now() - start,
     counts: parseTestCounts(output),
     failingTests: parseFailingTests(output),
-    junitDestPath
+    junitDestPath,
+    rawOutput: output
   };
+}
+
+// GitHub Actions: https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/workflow-commands#grouping-log-lines
+export function ciGroupSyntax(env) {
+  if (env.GITHUB_ACTIONS === "true") {
+    return {
+      start: (title) => `::group::${title}`,
+      end: () => "::endgroup::"
+    };
+  }
+  return null;
+}
+
+export function ciGroupTitle(name, result) {
+  const seconds = formatSeconds(result.durationMs);
+  const countsLabel = result.counts ? ` (${result.counts.pass}/${result.counts.tests} tests)` : "";
+  const icon = result.exitCode === 0 ? "✓" : "✗";
+  return `${icon} ${name} ${seconds}${countsLabel}`;
+}
+
+function printWorkspaceResultCi(name, result, ciGroup) {
+  process.stdout.write(`${ciGroup.start(ciGroupTitle(name, result))}\n`);
+  process.stdout.write(`${result.rawOutput || "(no output captured)"}\n`);
+  process.stdout.write(`${ciGroup.end()}\n`);
 }
 
 async function collectJunitEntries(results) {
@@ -178,6 +203,7 @@ function printWorkspaceResult(name, result) {
 
 async function runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir }) {
   const results = [];
+  const ciGroup = ciGroupSyntax(process.env);
 
   for (const [index, wsPath] of workspacesToRun.entries()) {
     const name = workspaceName(wsPath);
@@ -194,7 +220,13 @@ async function runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir }
       process.exit(1);
     }
     results.push(result);
-    printWorkspaceResult(name, result);
+
+    if (ciGroup) {
+      printWorkspaceResultCi(name, result, ciGroup);
+    }
+    else {
+      printWorkspaceResult(name, result);
+    }
 
     if (result.exitCode !== 0 && ff) {
       break;
