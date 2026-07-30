@@ -48,6 +48,7 @@ describe("sumlyzer CLI behaviors", () => {
     assert.match(stdout, /--script <name>/);
     assert.match(stdout, /--ff/);
     assert.match(stdout, /--junit <path>/);
+    assert.match(stdout, /-c, --concurrency <n>/);
     assert.match(stdout, /-h, --help/);
   });
 
@@ -58,6 +59,16 @@ describe("sumlyzer CLI behaviors", () => {
     ]);
 
     assert.equal(short.stdout, full.stdout);
+  });
+
+  it("-c is the same as --concurrency", async () => {
+    const [long, short] = await Promise.all([
+      execFileAsync("node", [BIN, "--help", "--concurrency", "4"], { cwd: PROJECT_WITH_WORKSPACES }),
+      execFileAsync("node", [BIN, "--help", "-c", "4"], { cwd: PROJECT_WITH_WORKSPACES })
+    ]);
+
+    assert.equal(short.stdout, long.stdout);
+    assert.match(long.stdout, /4 at a time/);
   });
 
   it("reflects --script in the help text instead of the \"test\" default", async () => {
@@ -129,6 +140,34 @@ describe("sumlyzer CLI behaviors", () => {
       }
     );
   });
+
+  for (const invalid of ["0", "1.5", "abc"]) {
+    it(`prints a friendly message instead of a stack trace for --concurrency ${invalid}`, async () => {
+      await assert.rejects(
+        execFileAsync("node", [BIN, "--concurrency", invalid], { cwd: PROJECT_WITH_WORKSPACES }),
+        (error) => {
+          assert.equal(error.code, 1);
+          assert.match(error.stdout, /--concurrency must be a positive integer/);
+          assert.match(error.stdout, /sumlyzer --help/);
+          assert.doesNotMatch(error.stdout, /at ModuleJob|node:internal/);
+          return true;
+        }
+      );
+    });
+  }
+
+  it("prints a friendly message instead of a stack trace for --concurrency=-1", async () => {
+    await assert.rejects(
+      execFileAsync("node", [BIN, "--concurrency=-1"], { cwd: PROJECT_WITH_WORKSPACES }),
+      (error) => {
+        assert.equal(error.code, 1);
+        assert.match(error.stdout, /--concurrency must be a positive integer/);
+        assert.match(error.stdout, /sumlyzer --help/);
+        assert.doesNotMatch(error.stdout, /at ModuleJob|node:internal/);
+        return true;
+      }
+    );
+  });
 });
 
 describe("sumlyzer run behavior", () => {
@@ -165,6 +204,42 @@ describe("sumlyzer run behavior", () => {
 
     // regression guard: a workspace that never ran must not also be listed as PASS.
     assert.doesNotMatch(stdout, /pass-ws\W+PASS/);
+  });
+
+  it("--concurrency runs every eligible workspace regardless of completion order", async () => {
+    const { stdout, code } = await runCli(["--concurrency", "3"], RUN_FIXTURE);
+
+    assert.equal(code, 1);
+
+    assert.match(stdout, /running fail-ws/);
+    assert.match(stdout, /running pass-ws/);
+    assert.match(stdout, /running custom-runner-ws/);
+
+    assert.match(stdout, /✗ fail-ws failed/);
+    assert.match(stdout, /✖ some assertion/);
+    assert.match(stdout, /✖ another assertion/);
+    assert.match(stdout, /✓ pass-ws.*\(3\/3 tests\)/);
+    assert.match(stdout, /✓ custom-runner-ws/);
+
+    assert.doesNotMatch(stdout, /SKIPPED/);
+    assert.match(stdout, /1\/3 workspace\(s\) failed:/);
+  });
+
+  it("--ff with --concurrency only skips workspaces that never started", async () => {
+    const { stdout, code } = await runCli(["--ff", "--concurrency", "2"], RUN_FIXTURE);
+
+    assert.equal(code, 1);
+
+    assert.match(stdout, /running fail-ws/);
+    assert.match(stdout, /✗ fail-ws failed/);
+    assert.match(stdout, /1\/\d workspace\(s\) failed:\n {2}fail-ws/);
+
+    const ranMatch = stdout.match(/\d+\/(\d+) workspace\(s\) failed:/);
+    const skippedMatch = stdout.match(/(\d+) workspace\(s\) skipped \(--ff\)/);
+    const ranCount = Number(ranMatch[1]);
+    const skippedCount = skippedMatch ? Number(skippedMatch[1]) : 0;
+
+    assert.equal(ranCount + skippedCount, 3);
   });
 
   it("on GitHub Actions, folds each workspace's full output behind group/endgroup instead of the plain format", async () => {

@@ -50,6 +50,7 @@ Options:
 | `--script <name>` | `test` | npm script to run per workspace |
 | `--ff` | off | fail fast: stop at the first failing workspace |
 | `--junit <path>` | off | write an aggregated JUnit XML report to `<path>` |
+| `-c, --concurrency <n>` | `1` | run up to `<n>` workspaces at once |
 | `-h, --help` | | print usage |
 
 Exit code is `1` if any workspace fails (or if the project has no
@@ -64,6 +65,8 @@ This also applies when `--junit` can't write its report (e.g. an invalid
 - Aggregated JUnit XML report (`--junit`), merging every workspace's own results
 - GitHub Actions log folding: each workspace's output collapsed into an
   expandable group, automatically, no flag needed
+- Concurrent runs (`--concurrency <n>`): run several workspaces' test scripts
+  at once instead of one by one
 
 ## Example
 
@@ -195,6 +198,22 @@ full suite output.
 
 No other CI provider is currently supported: GitHub is the
 only one whose log folding sumlyzer has actually verified end-to-end.
+
+### Concurrency
+
+`--concurrency <n>` runs up to `<n>` workspaces' scripts at the same time
+instead of one after another, which can noticeably cut wall-clock time on
+projects with many workspaces. There is no ordering dependency to worry about
+here: unlike a `build` script, one workspace's `node:test` run never depends
+on another workspace's test run, so nothing needs to be sequenced.
+
+Since workspaces can now finish in any order, their output interleaves in
+whatever order they complete, rather than following the `workspaces` list
+order.
+
+With `--ff`, a failure only stops workspaces that haven't started yet; any
+workspace already running when the failure is detected runs to completion
+(sumlyzer doesn't kill in-flight processes).
 
 ## Why
 

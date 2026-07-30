@@ -92,33 +92,42 @@ async function collectJunitEntries(results) {
   return { entries, missing };
 }
 
-async function runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir }) {
-  const results = [];
+async function runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir, concurrency }) {
+  const results = new Array(workspacesToRun.length);
   const ciGroup = githubGroupSyntax(process.env);
+  let stopScheduling = false;
+  let nextIndex = 0;
 
-  for (const [index, wsPath] of workspacesToRun.entries()) {
-    const name = workspaceName(wsPath);
-    process.stdout.write(dim(`running ${name}\n`));
+  async function worker() {
+    while (!stopScheduling && nextIndex < workspacesToRun.length) {
+      const index = nextIndex++;
+      const wsPath = workspacesToRun[index];
+      const name = workspaceName(wsPath);
+      process.stdout.write(dim(`running ${name}\n`));
 
-    const junitDestPath = junitDir ? path.join(junitDir, `${index}.xml`) : undefined;
+      const junitDestPath = junitDir ? path.join(junitDir, `${index}.xml`) : undefined;
 
-    let result;
-    try {
-      result = await runWorkspaceScript(root, wsPath, scriptName, junitDestPath);
-    }
-    catch (error) {
-      console.error(red(`✗ ${name}: could not launch "${scriptName}" (${error.message})`));
-      process.exit(1);
-    }
-    results.push(result);
-    printWorkspaceResult(name, result, ciGroup);
+      let result;
+      try {
+        result = await runWorkspaceScript(root, wsPath, scriptName, junitDestPath);
+      }
+      catch (error) {
+        console.error(red(`✗ ${name}: could not launch "${scriptName}" (${error.message})`));
+        process.exit(1);
+      }
+      results[index] = result;
+      printWorkspaceResult(name, result, ciGroup);
 
-    if (result.exitCode !== 0 && ff) {
-      break;
+      if (result.exitCode !== 0 && ff) {
+        stopScheduling = true;
+      }
     }
   }
 
-  return results;
+  const workerCount = Math.max(1, Math.min(concurrency, workspacesToRun.length));
+  await Promise.all(Array.from({ length: workerCount }, worker));
+
+  return results.filter((result) => result !== undefined);
 }
 
 const DEFAULT_JUNIT_FILENAME = "junit.xml";
@@ -147,7 +156,7 @@ async function writeJunitReport(root, junitPath, results) {
   }
 }
 
-export async function main({ root, scriptName, ff, junitPath }) {
+export async function main({ root, scriptName, ff, junitPath, concurrency = 1 }) {
 
   const { workspaces } = readJson(path.join(root, "package.json"));
 
@@ -161,7 +170,7 @@ export async function main({ root, scriptName, ff, junitPath }) {
 
   let results;
   try {
-    results = await runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir });
+    results = await runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir, concurrency });
 
     if (junitDir) {
       await writeJunitReport(root, junitPath, results);
