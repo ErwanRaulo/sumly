@@ -2,29 +2,21 @@ import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { promisify, styleText } from "node:util";
+import { promisify } from "node:util";
 import path from "node:path";
 
 import { buildJunitReport } from "./junit.mjs";
+import { parseTestCounts, parseFailingTests, stripNpmNoise, extractFailureDetails } from "./parseOutput.mjs";
+import { red, dim, workspaceName, githubGroupSyntax, printWorkspaceResult, printSummary, reportOutcome } from "./reporter.mjs";
 
 const execFileAsync = promisify(execFile);
-
-const green = (str) => styleText("green", str);
-const red = (str) => styleText("red", str);
-const dim = (str) => styleText("dim", str);
-const bold = (str) => styleText("bold", str);
-
-const COUNT_INDEX = 1;
-const count = (target, output) => new RegExp(String.raw`ℹ ${target} (\d+)`).exec(output)?.[COUNT_INDEX];
 
 const SPEC_REPORTER_FLAGS = "--test-reporter=spec --test-reporter-destination=stdout";
 
 export function envWithSpecReporter(env, junitDestPath) {
   const existing = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} ` : "";
   const junitFlags = junitDestPath ? ` --test-reporter=junit --test-reporter-destination=${junitDestPath}` : "";
-  // Drop NODE_TEST_CONTEXT: if sumlyzer itself is invoked from inside a node:test run (e.g.
-  // its own test suite), this var would otherwise leak into the workspace's own `node --test`
-  // process, which then silently treats itself as a nested child and stops reporting normally.
+  // Drop NODE_TEST_CONTEXT: if sumlyzer itself is invoked from inside a node:test run, this var would otherwise leak.
   const rest = { ...env };
   delete rest.NODE_TEST_CONTEXT;
   return { ...rest, NODE_OPTIONS: `${existing}${SPEC_REPORTER_FLAGS}${junitFlags}` };
@@ -32,10 +24,6 @@ export function envWithSpecReporter(env, junitDestPath) {
 
 function readJson(file) {
   return JSON.parse(readFileSync(file, "utf8"));
-}
-
-export function workspaceName(wsPath) {
-  return (wsPath ?? "").replace(/^workspaces[\\/]/, "");
 }
 
 function listEligibleWorkspaces(root, workspaces, scriptName) {
@@ -48,50 +36,6 @@ function listEligibleWorkspaces(root, workspaces, scriptName) {
       return false;
     }
   });
-}
-
-export function parseTestCounts(output) {
-  const tests = count("tests", output);
-
-  if (!tests) {
-    return null;
-  }
-
-  return {
-    tests,
-    pass: count("pass", output) ?? "?",
-    fail: count("fail", output) ?? "?",
-    durationMs: count("duration_ms", output)
-  };
-}
-
-export function parseFailingTests(output) {
-  const [, section] = output.split("✖ failing tests:");
-  if (!section) {
-    return [];
-  }
-
-  return [...section.matchAll(/^✖ (.+) \([\d.]+ms\)$/gm)].map((match) => match[1]);
-}
-
-export function stripNpmNoise(output) {
-  return output.replace(/^npm warn .*\n?/gm, "");
-}
-
-export function extractFailureDetails(output) {
-  const [, section] = output.split("✖ failing tests:");
-  if (!section) {
-    return output.trim();
-  }
-
-  const details = section.split(/\n(?=npm )/)[0].trim();
-
-  return details.includes("'test failed'") ? output.trim() : details;
-}
-
-export function formatSeconds(ms) {
-  const seconds = Number.isFinite(ms) ? ms / 1000 : 0;
-  return `${seconds.toFixed(1)}s`;
 }
 
 async function runWorkspaceScript(root, wsPath, scriptName, junitDestPath) {
@@ -129,30 +73,6 @@ async function runWorkspaceScript(root, wsPath, scriptName, junitDestPath) {
   };
 }
 
-// GitHub Actions: https://docs.github.com/actions/how-tos/write-workflows/choose-what-workflows-do/workflow-commands#grouping-log-lines
-export function ciGroupSyntax(env) {
-  if (env.GITHUB_ACTIONS === "true") {
-    return {
-      start: (title) => `::group::${title}`,
-      end: () => "::endgroup::"
-    };
-  }
-  return null;
-}
-
-export function ciGroupTitle(name, result) {
-  const seconds = formatSeconds(result.durationMs);
-  const countsLabel = result.counts ? ` (${result.counts.pass}/${result.counts.tests} tests)` : "";
-  const icon = result.exitCode === 0 ? "✓" : "✗";
-  return `${icon} ${name} ${seconds}${countsLabel}`;
-}
-
-function printWorkspaceResultCi(name, result, ciGroup) {
-  process.stdout.write(`${ciGroup.start(ciGroupTitle(name, result))}\n`);
-  process.stdout.write(`${result.rawOutput || "(no output captured)"}\n`);
-  process.stdout.write(`${ciGroup.end()}\n`);
-}
-
 async function collectJunitEntries(results) {
   const entries = [];
   const missing = [];
@@ -165,9 +85,6 @@ async function collectJunitEntries(results) {
       entries.push({ name: workspaceName(result.wsPath), xml: await readFile(result.junitDestPath, "utf8") });
     }
     catch {
-      // Either the workspace crashed before node:test's own junit reporter could write its
-      // file, or --script points at something that isn't node:test at all; skip it, but the
-      // caller still needs to know so it can tell the user the report is missing an entry.
       missing.push(workspaceName(result.wsPath));
     }
   }
@@ -175,35 +92,9 @@ async function collectJunitEntries(results) {
   return { entries, missing };
 }
 
-function summaryRow(workspace, status, duration, counts) {
-  return {
-    workspace,
-    status,
-    duration,
-    testsDuration: counts?.durationMs ? formatSeconds(Number(counts.durationMs)) : "-",
-    tests: counts?.tests ?? "-",
-    pass: counts?.pass ?? "-",
-    fail: counts?.fail ?? "-"
-  };
-}
-
-function printWorkspaceResult(name, result) {
-  const seconds = formatSeconds(result.durationMs);
-  const countsLabel = result.counts ? ` (${result.counts.pass}/${result.counts.tests} tests)` : "";
-
-  if (result.exitCode === 0) {
-    process.stdout.write(green(`✓ ${name}`) + dim(` ${seconds}${countsLabel}\n`));
-    return;
-  }
-
-  process.stdout.write(`\n${bold(red(`✗ ${name} failed`))}\n`);
-  process.stdout.write(result.failureDetails + "\n");
-  process.stdout.write(red(`✗ ${name}`) + dim(` ${seconds}, exit code ${result.exitCode}\n\n`));
-}
-
 async function runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir }) {
   const results = [];
-  const ciGroup = ciGroupSyntax(process.env);
+  const ciGroup = githubGroupSyntax(process.env);
 
   for (const [index, wsPath] of workspacesToRun.entries()) {
     const name = workspaceName(wsPath);
@@ -220,13 +111,7 @@ async function runWorkspaces({ root, workspacesToRun, scriptName, ff, junitDir }
       process.exit(1);
     }
     results.push(result);
-
-    if (ciGroup) {
-      printWorkspaceResultCi(name, result, ciGroup);
-    }
-    else {
-      printWorkspaceResult(name, result);
-    }
+    printWorkspaceResult(name, result, ciGroup);
 
     if (result.exitCode !== 0 && ff) {
       break;
@@ -260,41 +145,6 @@ async function writeJunitReport(root, junitPath, results) {
     console.error(red(`Could not write JUnit report to "${destination}" (${error.message})`));
     process.exitCode = 1;
   }
-}
-
-function printSummary(results, skipped) {
-  console.log(bold("\nSummary"));
-  console.table([
-    ...results.map((result) => summaryRow(
-      workspaceName(result.wsPath),
-      result.exitCode === 0 ? "PASS" : "FAIL",
-      formatSeconds(result.durationMs),
-      result.counts
-    )),
-    ...skipped.map((wsPath) => summaryRow(workspaceName(wsPath), "SKIPPED", "-", null))
-  ]);
-
-  if (skipped.length > 0) {
-    console.log(dim(`${skipped.length} workspace(s) skipped (--ff): ${skipped.map(workspaceName).join(", ")}`));
-  }
-}
-
-function reportOutcome(results) {
-  const failed = results.filter((result) => result.exitCode !== 0);
-
-  if (failed.length === 0) {
-    console.log(green(`${results.length}/${results.length} workspaces passed.`));
-    return;
-  }
-
-  console.log(red(`${failed.length}/${results.length} workspace(s) failed:`));
-  for (const result of failed) {
-    console.log(red(`  ${workspaceName(result.wsPath)}`));
-    for (const testName of result.failingTests) {
-      console.log(dim(`    ✖ ${testName}`));
-    }
-  }
-  process.exitCode = 1;
 }
 
 export async function main({ root, scriptName, ff, junitPath }) {
