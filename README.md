@@ -57,6 +57,14 @@ workspaces), `0` otherwise, wire it straight into CI without extra parsing.
 This also applies when `--junit` can't write its report (e.g. an invalid
 `<path>`): the exit code is `1` even if every workspace's tests passed.
 
+## Features
+
+- Aggregated pass/fail summary table, so nothing scrolls out of the terminal
+- Fail-fast (`--ff`): stop at the first failing workspace
+- Aggregated JUnit XML report (`--junit`), merging every workspace's own results
+- GitHub Actions log folding: each workspace's output collapsed into an
+  expandable group, automatically, no flag needed
+
 ## Example
 
 ```
