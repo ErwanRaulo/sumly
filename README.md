@@ -195,9 +195,11 @@ no aggregated summary and no way to fail fast early. An early failure just
 scrolls off screen once later workspaces print their own output. sumlyzer is
 a small, dependency-free tool that solves just this.
 
-npm itself has an open RFC asking for this exact fail-fast behavior at the
-`--workspaces` level: [npm/rfcs#575](https://github.com/npm/rfcs/issues/575).
-Until that lands (if it ever does), sumlyzer's `--ff` flag gets you there.
+This exact fail-fast behavior at the `--workspaces` level has been requested
+from npm more than once:
+[npm/rfcs#575](https://github.com/npm/rfcs/issues/575) (open) and
+[npm/rfcs#602](https://github.com/npm/rfcs/issues/602) (closed). Until it
+lands (if it ever does), sumlyzer's `--ff` flag gets you there.
 
 ## Contributing
 
