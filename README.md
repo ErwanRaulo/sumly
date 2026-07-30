@@ -199,7 +199,9 @@ This exact fail-fast behavior at the `--workspaces` level has been requested
 from npm more than once:
 [npm/rfcs#575](https://github.com/npm/rfcs/issues/575) (open) and
 [npm/rfcs#602](https://github.com/npm/rfcs/issues/602) (closed). Until it
-lands (if it ever does), sumlyzer's `--ff` flag gets you there.
+lands (if it ever does), sumlyzer's `--ff` flag gets you there — see also
+this [Stack Overflow answer](https://stackoverflow.com/questions/71300870/npm-workspace-command-does-not-stop-executing-when-command-fails-for-a-workspace/79989284#79989284)
+on the same problem.
 
 ## Contributing
 
