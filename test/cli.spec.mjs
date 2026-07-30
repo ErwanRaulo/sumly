@@ -24,8 +24,11 @@ const JUNIT_FIXTURE = path.join(TEST_PATH, "junit-fixture");
 
 async function runCli(args, cwd, env) {
   // Avoid suite's own CI run setting GITHUB_ACTIONS=true, which would trigger the fold markers.
+  // Also strip FORCE_COLOR: a shell that forces colors on would inject ANSI codes into stdout
+  // and break assertions that expect plain adjacent text.
   const childEnv = { ...process.env };
   delete childEnv.GITHUB_ACTIONS;
+  delete childEnv.FORCE_COLOR;
   Object.assign(childEnv, env);
 
   try {
