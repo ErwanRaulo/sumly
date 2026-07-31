@@ -215,6 +215,8 @@ With `--ff`, a failure only stops workspaces that haven't started yet; any
 workspace already running when the failure is detected runs to completion
 (sumlyzer doesn't kill in-flight processes).
 
+![Concurrent run stopping early on failure](https://github.com/ErwanRaulo/sumlyzer/blob/main/concurrency-failed.png?raw=true)
+
 ## Why
 
 `npm run test --workspaces --if-present` runs every workspace but gives you
