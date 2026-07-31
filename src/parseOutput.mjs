@@ -1,6 +1,8 @@
 const COUNT_INDEX = 1;
 const count = (target, output) => new RegExp(String.raw`ℹ ${target} (\d+)`).exec(output)?.[COUNT_INDEX];
 
+// skip/todo/cancelled fall back to "0" rather than "?": unlike pass/fail, a missing
+// line here is far more likely to mean "zero" than "parsing went wrong somehow".
 export function parseTestCounts(output) {
   const tests = count("tests", output);
 
@@ -12,6 +14,9 @@ export function parseTestCounts(output) {
     tests,
     pass: count("pass", output) ?? "?",
     fail: count("fail", output) ?? "?",
+    skip: count("skipped", output) ?? "0",
+    todo: count("todo", output) ?? "0",
+    cancelled: count("cancelled", output) ?? "0",
     durationMs: count("duration_ms", output)
   };
 }

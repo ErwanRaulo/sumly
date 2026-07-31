@@ -6,7 +6,17 @@ import { parseTestCounts, parseFailingTests, stripNpmNoise, extractFailureDetail
 describe("parseTestCounts", () => {
   it("extracts tests/pass/fail/duration from a node:test trailer", () => {
     const output = "ℹ tests 30\nℹ pass 28\nℹ fail 2\nℹ duration_ms 126\n";
-    assert.deepEqual(parseTestCounts(output), { tests: "30", pass: "28", fail: "2", durationMs: "126" });
+    assert.deepEqual(parseTestCounts(output), { tests: "30", pass: "28", fail: "2", skip: "0", todo: "0", cancelled: "0", durationMs: "126" });
+  });
+
+  it("extracts skipped tests when node:test reports some", () => {
+    const output = "ℹ tests 30\nℹ pass 27\nℹ fail 2\nℹ skipped 1\nℹ duration_ms 126\n";
+    assert.deepEqual(parseTestCounts(output), { tests: "30", pass: "27", fail: "2", skip: "1", todo: "0", cancelled: "0", durationMs: "126" });
+  });
+
+  it("extracts todo and cancelled tests when node:test reports some", () => {
+    const output = "ℹ tests 30\nℹ pass 27\nℹ fail 0\nℹ cancelled 1\nℹ skipped 1\nℹ todo 1\nℹ duration_ms 126\n";
+    assert.deepEqual(parseTestCounts(output), { tests: "30", pass: "27", fail: "0", skip: "1", todo: "1", cancelled: "1", durationMs: "126" });
   });
 
   it("returns null when no trailer is present", () => {

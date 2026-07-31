@@ -57,32 +57,32 @@ export function printWorkspaceResult(name, result, ciGroup) {
   process.stdout.write(red(`✗ ${name}`) + dim(` ${seconds}, exit code ${result.exitCode}\n\n`));
 }
 
-function summaryRow(workspace, status, duration, counts) {
+function summaryRow(status, duration, counts) {
   return {
-    workspace,
     status,
     duration,
     testsDuration: counts?.durationMs ? formatSeconds(Number(counts.durationMs)) : "-",
     tests: counts?.tests ?? "-",
     pass: counts?.pass ?? "-",
-    fail: counts?.fail ?? "-"
+    fail: counts?.fail ?? "-",
+    skip: counts?.skip ?? "-",
+    todo: counts?.todo ?? "-",
+    cancelled: counts?.cancelled ?? "-"
   };
 }
 
 export function printSummary(results, skipped) {
   console.log(bold("\nSummary"));
-  console.table([
-    ...results.map(({ wsPath, exitCode, durationMs, counts }) => {
 
-      return summaryRow(
-        workspaceName(wsPath),
-        exitCode === 0 ? "PASS" : "FAIL",
-        formatSeconds(durationMs),
-        counts
-      );
-    }),
-    ...skipped.map((wsPath) => summaryRow(workspaceName(wsPath), "SKIPPED", "-", null))
-  ]);
+  const rows = {};
+  for (const { wsPath, exitCode, durationMs, counts } of results) {
+    rows[workspaceName(wsPath)] = summaryRow(exitCode === 0 ? "PASS" : "FAIL", formatSeconds(durationMs), counts);
+  }
+  for (const wsPath of skipped) {
+    rows[workspaceName(wsPath)] = summaryRow("SKIPPED", "-", null);
+  }
+
+  console.table(rows);
 
   if (skipped.length > 0) {
     console.log(dim(`${skipped.length} workspace(s) skipped (--ff): ${skipped.map(workspaceName).join(", ")}`));

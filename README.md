@@ -11,7 +11,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/npm/l/sumlyzer.svg" alt="license" /></a>
 </p>
 
-Run every npm workspace's test script, one by one. Passing workspaces output
+Run every npm workspace's test script, one by one or in concurrence. Passing workspaces output
 to a single line; failing ones print only the relevant failure detail.
 Ends with an aggregated pass/fail summary table, so nothing scrolls out of the terminal.
 
@@ -55,8 +55,8 @@ Options:
 
 Exit code is `1` if any workspace fails (or if the project has no
 workspaces), `0` otherwise, wire it straight into CI without extra parsing.
-This also applies when `--junit` can't write its report (e.g. an invalid
-`<path>`): the exit code is `1` even if every workspace's tests passed.
+This also applies when `--junit` can't write its report.
+The exit code is `1` even if every workspace's tests passed.
 
 ## Features
 
@@ -99,26 +99,43 @@ running gitlab
 ✓ gitlab 4.3s (8/8 tests)
 
 Summary
-┌─────────┬────────────────┬──────────┬────────────┬────────────────┬─────────┬────────┬────────┐
-│ (index) │ workspace      │ status   │ duration   │ testsDuration  │ tests   │ pass   │ fail   │
-├─────────┼────────────────┼──────────┼────────────┼────────────────┼─────────┼────────┼────────┤
-│ 0       │ 'contact'      │ 'PASS'   │ '2.6s'     │ '0.9s'         │ '35'    │ '35'   │ '0'    │
-│ 1       │ 'scanner'      │ 'PASS'   │ '10.1s'    │ '8.7s'         │ '162'   │ '161'  │ '0'    │
-│ 2       │ 'tarball'      │ 'PASS'   │ '1.8s'     │ '0.7s'         │ '77'    │ '77'   │ '0'    │
-│ 3       │ 'mama'         │ 'PASS'   │ '1.2s'     │ '0.1s'         │ '85'    │ '85'   │ '0'    │
-│ 4       │ 'tree-walker'  │ 'PASS'   │ '3.0s'     │ '2.0s'         │ '26'    │ '26'   │ '0'    │
-│ 5       │ 'conformance'  │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '35'    │ '35'   │ '0'    │
-│ 6       │ 'i18n'         │ 'PASS'   │ '1.1s'     │ '0.2s'         │ '19'    │ '19'   │ '0'    │
-│ 7       │ 'rc'           │ 'PASS'   │ '4.1s'     │ '0.6s'         │ '28'    │ '28'   │ '0'    │
-│ 8       │ 'utils'        │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '30'    │ '30'   │ '0'    │
-│ 9       │ 'flags'        │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '9'     │ '9'    │ '0'    │
-│ 10      │ 'fs-walk'      │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '3'     │ '3'    │ '0'    │
-│ 11      │ 'github'       │ 'PASS'   │ '2.9s'     │ '2.0s'         │ '8'     │ '8'    │ '0'    │
-│ 12      │ 'gitlab'       │ 'PASS'   │ '4.3s'     │ '3.3s'         │ '8'     │ '8'    │ '0'    │
-└─────────┴────────────────┴──────────┴────────────┴────────────────┴─────────┴────────┴────────┘
+┌─────────────┬────────┬──────────┬───────────────┬───────┬───────┬──────┬──────┬──────┬───────────┐
+│ (index)     │ status │ duration │ testsDuration │ tests │ pass  │ fail │ skip │ todo │ cancelled │
+├─────────────┼────────┼──────────┼───────────────┼───────┼───────┼──────┼──────┼──────┼───────────┤
+│ contact     │ 'PASS' │ '2.6s'   │ '0.9s'        │ '35'  │ '35'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ scanner     │ 'PASS' │ '10.1s'  │ '8.7s'        │ '162' │ '161' │ '0'  │ '1'  │ '0'  │ '0'       │
+│ tarball     │ 'PASS' │ '1.8s'   │ '0.7s'        │ '77'  │ '77'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ mama        │ 'PASS' │ '1.2s'   │ '0.1s'        │ '85'  │ '85'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ tree-walker │ 'PASS' │ '3.0s'   │ '2.0s'        │ '26'  │ '26'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ conformance │ 'PASS' │ '1.1s'   │ '0.1s'        │ '35'  │ '35'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ i18n        │ 'PASS' │ '1.1s'   │ '0.2s'        │ '19'  │ '19'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ rc          │ 'PASS' │ '4.1s'   │ '0.6s'        │ '28'  │ '28'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ utils       │ 'PASS' │ '1.1s'   │ '0.1s'        │ '30'  │ '30'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ flags       │ 'PASS' │ '1.1s'   │ '0.1s'        │ '9'   │ '9'   │ '0'  │ '0'  │ '0'  │ '0'       │
+│ fs-walk     │ 'PASS' │ '1.1s'   │ '0.1s'        │ '3'   │ '3'   │ '0'  │ '0'  │ '0'  │ '0'       │
+│ github      │ 'PASS' │ '2.9s'   │ '2.0s'        │ '8'   │ '8'   │ '0'  │ '0'  │ '0'  │ '0'       │
+│ gitlab      │ 'PASS' │ '4.3s'   │ '3.3s'        │ '8'   │ '8'   │ '0'  │ '0'  │ '0'  │ '0'       │
+└─────────────┴────────┴──────────┴───────────────┴───────┴───────┴──────┴──────┴──────┴───────────┘
 
 13/13 workspaces passed.
 ```
+
+### Summary columns
+
+| Column          | Meaning                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `(index)`       | Workspace name — `console.table` is fed an object keyed by workspace name (via `workspaceName` in [reporter.mjs](./src/reporter.mjs)) instead of an array, so this column carries the name instead of a meaningless row number |
+| `status`        | `PASS`, `FAIL`, or `SKIPPED` (only reached when `--ff` stopped scheduling before this workspace ran) |
+| `duration`      | Wall-clock time for the whole `npm run <script> --workspace=<path>` process, including npm/spawn overhead |
+| `testsDuration` | `duration_ms` as reported by node's own test runner — the actual test execution time, without the npm overhead |
+| `tests`         | Total number of tests node:test ran in that workspace                                            |
+| `pass`          | Number of passing tests                                                                          |
+| `fail`          | Number of failing tests                                                                          |
+| `skip`          | Tests reported as skipped (`ℹ skipped`), e.g. `t.skip()` or `{ skip: true }`                      |
+| `todo`          | Tests reported as todo (`ℹ todo`), e.g. `t.todo()` — intentionally not implemented yet, distinct from `skip` |
+| `cancelled`     | Tests reported as cancelled (`ℹ cancelled`), e.g. a timeout or a parent suite/hook failure that aborted them — unlike `skip`/`todo` this usually signals a real problem |
+
+`duration` and `testsDuration` are deliberately both shown: a gap between them usually means npm/process startup overhead rather than slow tests. `tests` always equals `pass + fail + skip + todo + cancelled`; the last three columns exist so none of those buckets can hide silently behind an all-green `pass`/`fail` pair.
 
 ### On failure
 
@@ -146,14 +163,14 @@ running flags
 ✓ flags 1.1s (9/9 tests)
 
 Summary
-┌─────────┬────────────┬──────────┬────────────┬────────────────┬─────────┬────────┬────────┐
-│ (index) │ workspace  │ status   │ duration   │ testsDuration  │ tests   │ pass   │ fail   │
-├─────────┼────────────┼──────────┼────────────┼────────────────┼─────────┼────────┼────────┤
-│ 0       │ 'contact'  │ 'PASS'   │ '2.6s'     │ '0.9s'         │ '35'    │ '35'   │ '0'    │
-│ 1       │ 'scanner'  │ 'PASS'   │ '10.1s'    │ '8.7s'         │ '162'   │ '161'  │ '0'    │
-│ 2       │ 'utils'    │ 'FAIL'   │ '1.3s'     │ '0.1s'         │ '30'    │ '29'   │ '1'    │
-│ 3       │ 'flags'    │ 'PASS'   │ '1.1s'     │ '0.1s'         │ '9'     │ '9'    │ '0'    │
-└─────────┴────────────┴──────────┴────────────┴────────────────┴─────────┴────────┴────────┘
+┌─────────┬────────┬──────────┬───────────────┬───────┬───────┬──────┬──────┬──────┬───────────┐
+│ (index) │ status │ duration │ testsDuration │ tests │ pass  │ fail │ skip │ todo │ cancelled │
+├─────────┼────────┼──────────┼───────────────┼───────┼───────┼──────┼──────┼──────┼───────────┤
+│ contact │ 'PASS' │ '2.6s'   │ '0.9s'        │ '35'  │ '35'  │ '0'  │ '0'  │ '0'  │ '0'       │
+│ scanner │ 'PASS' │ '10.1s'  │ '8.7s'        │ '162' │ '161' │ '0'  │ '1'  │ '0'  │ '0'       │
+│ utils   │ 'FAIL' │ '1.3s'   │ '0.1s'        │ '30'  │ '29'  │ '1'  │ '0'  │ '0'  │ '0'       │
+│ flags   │ 'PASS' │ '1.1s'   │ '0.1s'        │ '9'   │ '9'   │ '0'  │ '0'  │ '0'  │ '0'       │
+└─────────┴────────┴──────────┴───────────────┴───────┴───────┴──────┴──────┴──────┴───────────┘
 
 1/4 workspace(s) failed:
   utils
