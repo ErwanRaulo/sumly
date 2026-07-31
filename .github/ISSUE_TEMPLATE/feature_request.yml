@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest an improvement or a new option
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that `sumlyzer` doesn't support today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        Note: `sumlyzer` is intentionally narrow, **npm workspaces** running
+        **`node:test`**. If this is about supporting another package manager
+        (pnpm, yarn) or another test runner (Jest, Vitest, Mocha...), please
+        say so explicitly: that's a scope discussion, not a small patch.

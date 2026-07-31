@@ -1,0 +1,44 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The exact command you ran
+      placeholder: npx sumlyzer --ff --concurrency 4
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: sumlyzer / Node version
+      description: Output of `npx sumlyzer --version` and `node --version`
+      placeholder: "sumlyzer 0.4.0, node v22.10.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: >
+        If this is about parsing test output, include the relevant snippet
+        of `node:test`'s own output that didn't parse as expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Workspaces layout / anything else relevant
+      description: Your `workspaces` field, or a minimal repro, if relevant.
