@@ -11,9 +11,14 @@
   <a href="./LICENSE"><img src="https://img.shields.io/npm/l/sumlyzer.svg" alt="license" /></a>
 </p>
 
-Run every npm workspace's test script, one by one or in concurrence. Passing workspaces output
-to a single line; failing ones print only the relevant failure detail.
-Ends with an aggregated pass/fail summary table, so nothing scrolls out of the terminal.
+`npm run test --workspaces --if-present` runs every workspace, but gives you no
+aggregated summary and no way to fail fast — an early failure just scrolls off
+screen once later workspaces print their own output.
+
+Sumlyzer runs each workspace's test script, one by one or concurrently.
+Passing workspaces collapse to a single line, failing ones print just the
+relevant failure detail, and everything ends with an aggregated pass/fail
+summary table so nothing scrolls out of the terminal.
 
 ## Requirements
 
@@ -68,6 +73,11 @@ The exit code is `1` even if every workspace's tests passed.
 - Concurrent runs (`--concurrency <n>`): run several workspaces' test scripts
   at once instead of one by one
 
+## Roadmap
+
+- **Watch mode**: walking the workspace dependency graph (topological sort) so a change in
+  one workspace also re-runs the workspaces that depend on it.
+
 ## Example
 
 ```
@@ -77,26 +87,10 @@ running scanner
 ✓ scanner 10.1s (161/162 tests)
 running tarball
 ✓ tarball 1.8s (77/77 tests)
-running mama
-✓ mama 1.2s (85/85 tests)
 running tree-walker
 ✓ tree-walker 3.0s (26/26 tests)
-running conformance
-✓ conformance 1.1s (35/35 tests)
-running i18n
-✓ i18n 1.1s (19/19 tests)
-running rc
-✓ rc 4.1s (28/28 tests)
-running utils
-✓ utils 1.1s (30/30 tests)
 running flags
 ✓ flags 1.1s (9/9 tests)
-running fs-walk
-✓ fs-walk 1.1s (3/3 tests)
-running github
-✓ github 2.9s (8/8 tests)
-running gitlab
-✓ gitlab 4.3s (8/8 tests)
 
 Summary
 ┌─────────────┬────────┬──────────┬───────────────┬───────┬───────┬──────┬──────┬──────┬───────────┐
@@ -105,19 +99,11 @@ Summary
 │ contact     │ 'PASS' │ '2.6s'   │ '0.9s'        │ '35'  │ '35'  │ '0'  │ '0'  │ '0'  │ '0'       │
 │ scanner     │ 'PASS' │ '10.1s'  │ '8.7s'        │ '162' │ '161' │ '0'  │ '1'  │ '0'  │ '0'       │
 │ tarball     │ 'PASS' │ '1.8s'   │ '0.7s'        │ '77'  │ '77'  │ '0'  │ '0'  │ '0'  │ '0'       │
-│ mama        │ 'PASS' │ '1.2s'   │ '0.1s'        │ '85'  │ '85'  │ '0'  │ '0'  │ '0'  │ '0'       │
 │ tree-walker │ 'PASS' │ '3.0s'   │ '2.0s'        │ '26'  │ '26'  │ '0'  │ '0'  │ '0'  │ '0'       │
-│ conformance │ 'PASS' │ '1.1s'   │ '0.1s'        │ '35'  │ '35'  │ '0'  │ '0'  │ '0'  │ '0'       │
-│ i18n        │ 'PASS' │ '1.1s'   │ '0.2s'        │ '19'  │ '19'  │ '0'  │ '0'  │ '0'  │ '0'       │
-│ rc          │ 'PASS' │ '4.1s'   │ '0.6s'        │ '28'  │ '28'  │ '0'  │ '0'  │ '0'  │ '0'       │
-│ utils       │ 'PASS' │ '1.1s'   │ '0.1s'        │ '30'  │ '30'  │ '0'  │ '0'  │ '0'  │ '0'       │
 │ flags       │ 'PASS' │ '1.1s'   │ '0.1s'        │ '9'   │ '9'   │ '0'  │ '0'  │ '0'  │ '0'       │
-│ fs-walk     │ 'PASS' │ '1.1s'   │ '0.1s'        │ '3'   │ '3'   │ '0'  │ '0'  │ '0'  │ '0'       │
-│ github      │ 'PASS' │ '2.9s'   │ '2.0s'        │ '8'   │ '8'   │ '0'  │ '0'  │ '0'  │ '0'       │
-│ gitlab      │ 'PASS' │ '4.3s'   │ '3.3s'        │ '8'   │ '8'   │ '0'  │ '0'  │ '0'  │ '0'       │
 └─────────────┴────────┴──────────┴───────────────┴───────┴───────┴──────┴──────┴──────┴───────────┘
 
-13/13 workspaces passed.
+5/5 workspaces passed.
 ```
 
 ### Summary columns
@@ -236,17 +222,11 @@ workspace already running when the failure is detected runs to completion
 
 ## Why
 
-`npm run test --workspaces --if-present` runs every workspace but gives you
-no aggregated summary and no way to fail fast early. An early failure just
-scrolls off screen once later workspaces print their own output. sumlyzer is
-a small, dependency-free tool that solves just this.
-
-This exact fail-fast behavior at the `--workspaces` level has been requested
-from npm more than once:
-[npm/rfcs#575](https://github.com/npm/rfcs/issues/575) (open) and
-[npm/rfcs#602](https://github.com/npm/rfcs/issues/602) (closed). Until it
-lands (if it ever does), sumlyzer's `--ff` flag gets you there — see also
-this [Stack Overflow answer](https://stackoverflow.com/questions/71300870/npm-workspace-command-does-not-stop-executing-when-command-fails-for-a-workspace/79989284#79989284)
+This fail-fast behavior at the `--workspaces` level has been requested from
+npm more than once: [npm/rfcs#575](https://github.com/npm/rfcs/issues/575)
+(open) and [npm/rfcs#602](https://github.com/npm/rfcs/issues/602) (closed).
+Until it lands, sumlyzer's `--ff` flag gets you there — see also this
+[Stack Overflow answer](https://stackoverflow.com/questions/71300870/npm-workspace-command-does-not-stop-executing-when-command-fails-for-a-workspace/79989284#79989284)
 on the same problem.
 
 ## Contributing
