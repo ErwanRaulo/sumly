@@ -11,6 +11,10 @@
   <a href="./LICENSE"><img src="https://img.shields.io/npm/l/sumlyzer.svg" alt="license" /></a>
 </p>
 
+## Ever lost a failing test in thousands of lines of workspace output?
+
+## Ever wished your npm workspaces stopped at the first failure?
+ 
 `npm run test --workspaces --if-present` runs every workspace, but gives you no
 aggregated summary and no way to fail fast — an early failure just scrolls off
 screen once later workspaces print their own output.
@@ -110,18 +114,17 @@ Summary
 
 | Column          | Meaning                                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------ |
-| `(index)`       | Workspace name — `console.table` is fed an object keyed by workspace name (via `workspaceName` in [reporter.mjs](./src/reporter.mjs)) instead of an array, so this column carries the name instead of a meaningless row number |
-| `status`        | `PASS`, `FAIL`, or `SKIPPED` (only reached when `--ff` stopped scheduling before this workspace ran) |
+| `(index)`       | Workspace name |
+| `status`        | `PASS`, `FAIL`, or `SKIPPED` (reached when `--ff` stopped scheduling before this workspace ran) |
 | `duration`      | Wall-clock time for the whole `npm run <script> --workspace=<path>` process, including npm/spawn overhead |
-| `testsDuration` | `duration_ms` as reported by node's own test runner — the actual test execution time, without the npm overhead |
+| `testsDuration` | `duration_ms` as reported by node's own test runner |
 | `tests`         | Total number of tests node:test ran in that workspace                                            |
 | `pass`          | Number of passing tests                                                                          |
 | `fail`          | Number of failing tests                                                                          |
 | `skip`          | Tests reported as skipped (`ℹ skipped`), e.g. `t.skip()` or `{ skip: true }`                      |
-| `todo`          | Tests reported as todo (`ℹ todo`), e.g. `t.todo()` — intentionally not implemented yet, distinct from `skip` |
-| `cancelled`     | Tests reported as cancelled (`ℹ cancelled`), e.g. a timeout or a parent suite/hook failure that aborted them — unlike `skip`/`todo` this usually signals a real problem |
+| `todo`          | Tests reported as todo (`ℹ todo`), e.g. `t.todo()` |
+| `cancelled`     | Tests reported as cancelled (`ℹ cancelled`), unlike `skip`/`todo` this usually signals a real problem |
 
-`duration` and `testsDuration` are deliberately both shown: a gap between them usually means npm/process startup overhead rather than slow tests. `tests` always equals `pass + fail + skip + todo + cancelled`; the last three columns exist so none of those buckets can hide silently behind an all-green `pass`/`fail` pair.
 
 ### On failure
 
