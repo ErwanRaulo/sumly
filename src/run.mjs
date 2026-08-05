@@ -61,13 +61,15 @@ async function runWorkspaceScript(root, wsPath, scriptName, junitDestPath) {
     output = stripNpmNoise((error.stdout ?? "") + (error.stderr ?? ""));
   }
 
+  const [, failureSection] = output.split("✖ failing tests:");
+
   return {
     wsPath,
     exitCode,
-    failureDetails: exitCode === 0 ? null : extractFailureDetails(output),
+    failureDetails: exitCode === 0 ? null : extractFailureDetails(output, failureSection),
     durationMs: Date.now() - start,
     counts: parseTestCounts(output),
-    failingTests: parseFailingTests(output),
+    failingTests: parseFailingTests(failureSection),
     junitDestPath,
     rawOutput: output
   };

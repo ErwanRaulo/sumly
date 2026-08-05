@@ -33,12 +33,16 @@ describe("parseFailingTests", () => {
       "✖ does the thing (4ms)",
       "  AssertionError [ERR_ASSERTION]"
     ].join("\n");
+    const [, failureSection] = output.split("✖ failing tests:");
 
-    assert.deepEqual(parseFailingTests(output), ["does the thing"]);
+    assert.deepEqual(parseFailingTests(failureSection), ["does the thing"]);
   });
 
   it("returns an empty array when there is no recap section", () => {
-    assert.deepEqual(parseFailingTests("ℹ tests 3\nℹ pass 3\nℹ fail 0\n"), []);
+    const output = "ℹ tests 3\nℹ pass 3\nℹ fail 0\n";
+    const [, failureSection] = output.split("✖ failing tests:");
+
+    assert.deepEqual(parseFailingTests(failureSection), []);
   });
 });
 
@@ -67,7 +71,8 @@ describe("extractFailureDetails", () => {
       "npm error Lifecycle script `test` failed"
     ].join("\n");
 
-    const details = extractFailureDetails(output);
+    const [, failureSection] = output.split("✖ failing tests:");
+    const details = extractFailureDetails(output, failureSection);
     assert.ok(details.includes("broken test"));
     assert.ok(!details.includes("passing test"));
     assert.ok(!details.includes("npm error"));
@@ -82,11 +87,15 @@ describe("extractFailureDetails", () => {
       "✖ test/foo.spec.js (1ms)",
       "  'test failed'"
     ].join("\n");
+    const [, failureSection] = output.split("✖ failing tests:");
 
-    assert.ok(extractFailureDetails(output).includes("SyntaxError"));
+    assert.ok(extractFailureDetails(output, failureSection).includes("SyntaxError"));
   });
 
   it("returns the full trimmed output when there is no recap section at all", () => {
-    assert.equal(extractFailureDetails("  totrim  "), "totrim");
+    const output = "  totrim  ";
+    const [, failureSection] = output.split("✖ failing tests:");
+
+    assert.equal(extractFailureDetails(output, failureSection), "totrim");
   });
 });

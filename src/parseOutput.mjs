@@ -21,26 +21,24 @@ export function parseTestCounts(output) {
   };
 }
 
-export function parseFailingTests(output) {
-  const [, section] = output.split("✖ failing tests:");
-  if (!section) {
+export function parseFailingTests(failureSection) {
+  if (!failureSection) {
     return [];
   }
 
-  return [...section.matchAll(/^✖ (.+) \([\d.]+ms\)$/gm)].map((match) => match[1]);
+  return [...failureSection.matchAll(/^✖ (.+) \([\d.]+ms\)$/gm)].map((match) => match[1]);
 }
 
 export function stripNpmNoise(output) {
   return output.replace(/^npm warn .*\n?/gm, "");
 }
 
-export function extractFailureDetails(output) {
-  const [, section] = output.split("✖ failing tests:");
-  if (!section) {
+export function extractFailureDetails(output, failureSection) {
+  if (!failureSection) {
     return output.trim();
   }
 
-  const details = section.split(/\n(?=npm )/)[0].trim();
+  const details = failureSection.split(/\n(?=npm )/)[0].trim();
 
   return details.includes("'test failed'") ? output.trim() : details;
 }
