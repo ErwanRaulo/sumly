@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { availableParallelism } from "node:os";
 
 import { assertWellFormedXml } from "./xmlAssertions.mjs";
 
@@ -69,6 +70,14 @@ describe("sumlyzer CLI behaviors", () => {
 
     assert.equal(short.stdout, long.stdout);
     assert.match(long.stdout, /4 at a time/);
+  });
+
+  it("--concurrency above availableParallelism() is clamped down", async () => {
+    const max = availableParallelism();
+    const { stdout } = await execFileAsync("node", [BIN, "--help", "--concurrency", String(max + 100)], { cwd: PROJECT_WITH_WORKSPACES });
+
+    assert.match(stdout, new RegExp(`exceeds the available parallelism \\(${max}\\), clamping to ${max}\\.`));
+    assert.match(stdout, new RegExp(`${max} at a time`));
   });
 
   it("reflects --script in the help text instead of the \"test\" default", async () => {
