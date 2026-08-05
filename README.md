@@ -16,7 +16,7 @@
 ## Ever wished your npm workspaces stopped at the first failure?
  
 `npm run test --workspaces --if-present` runs every workspace, but gives you no
-aggregated summary and no way to fail fast — an early failure just scrolls off
+aggregated summary and no way to fail fast, an early failure just scrolls off
 screen once later workspaces print their own output.
 
 Sumlyzer runs each workspace's test script, one by one or concurrently.
@@ -228,7 +228,7 @@ workspace already running when the failure is detected runs to completion
 This fail-fast behavior at the `--workspaces` level has been requested from
 npm more than once: [npm/rfcs#575](https://github.com/npm/rfcs/issues/575)
 (open) and [npm/rfcs#602](https://github.com/npm/rfcs/issues/602) (closed).
-Until it lands, sumlyzer's `--ff` flag gets you there — see also this
+Until it lands, sumlyzer's `--ff` flag gets you there, see also this
 [Stack Overflow answer](https://stackoverflow.com/questions/71300870/npm-workspace-command-does-not-stop-executing-when-command-fails-for-a-workspace/79989284#79989284)
 on the same problem.
 

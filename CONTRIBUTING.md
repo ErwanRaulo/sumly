@@ -6,7 +6,7 @@ Thanks for taking the time to contribute!
 
 `sumlyzer` is intentionally narrow: **npm workspaces** running **`node:test`**.
 Before proposing support for another package manager (pnpm, yarn) or another
-test runner (Jest, Vitest, Mocha...), please open an issue to discuss it —
+test runner (Jest, Vitest, Mocha...), please open an issue to discuss it,
 that's a significant expansion of scope, not a small patch.
 
 ## Setup
@@ -37,13 +37,13 @@ node /path/to/sumlyzer/bin/sumlyzer.mjs --ff
 
 - Zero runtime dependencies as much as possible. Prefer a native Node.js API over adding a
   package.
-- Keep `src/run.mjs` functions small and pure where possible — they're unit
+- Keep `src/run.mjs` functions small and pure where possible, they're unit
   tested directly (`test/run.spec.mjs`), which only works if they don't
   depend on hidden state.
 - Only export what `bin/sumlyzer.mjs` or the test suite actually import.
   Everything else stays internal (see `package.json`, which has no `main` /
-  `exports` — the CLI is the only public surface).
-- No comments explaining *what* code does — name things clearly instead.
+  `exports`, the CLI is the only public surface).
+- No comments explaining *what* code does, name things clearly instead.
   A comment is only worth it for a non-obvious *why*.
 
 ## Submitting changes
@@ -55,6 +55,6 @@ node /path/to/sumlyzer/bin/sumlyzer.mjs --ff
 
 ## Reporting bugs
 
-Please include: the command you ran, your Node version, and — if the bug is
-about parsing test output — the relevant snippet of `node:test`'s output
+Please include: the command you ran, your Node version, and, if the bug is
+about parsing test output, the relevant snippet of `node:test`'s output
 that didn't parse as expected.
