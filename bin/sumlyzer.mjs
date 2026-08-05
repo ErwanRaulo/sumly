@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
 import path from "node:path";
+import { availableParallelism } from "node:os";
 
 import { main } from "../src/run.mjs";
 
-let values;
+let args;
 try {
-  ({ values } = parseArgs({
+  ({ values: args } = parseArgs({
     options: {
       ff: { type: "boolean", default: false },
       script: { type: "string", default: "test" },
@@ -23,16 +24,22 @@ catch (error) {
   process.exit(1);
 }
 
-const concurrency = Number.parseInt(values.concurrency, 10);
-if (!Number.isInteger(concurrency) || concurrency < 1 || String(concurrency) !== values.concurrency) {
-  console.info(`--concurrency must be a positive integer, got "${values.concurrency}". Run "sumlyzer --help" for usage.`);
+let concurrency = Number.parseInt(args.concurrency, 10);
+if (!Number.isInteger(concurrency) || concurrency < 1 || String(concurrency) !== args.concurrency) {
+  console.info(`--concurrency must be a positive integer, got "${args.concurrency}". Run "sumlyzer --help" for usage.`);
   process.exit(1);
 }
 
-if (values.help) {
+const maxConcurrency = availableParallelism();
+if (concurrency > maxConcurrency) {
+  console.info(`--concurrency ${concurrency} exceeds the available parallelism (${maxConcurrency}), clamping to ${maxConcurrency}.`);
+  concurrency = maxConcurrency;
+}
+
+if (args.help) {
   console.log(`sumlyzer [options]
 
-Runs each npm workspace's "${values.script}" script, ${concurrency > 1 ? `${concurrency} at a time` : "one by one"}. Passing
+Runs each npm workspace's "${args.script}" script, ${concurrency > 1 ? `${concurrency} at a time` : "one by one"}. Passing
 workspaces collapse to a single line; failing ones print only the relevant
 failure detail. Ends with an aggregated pass/fail summary table.
 
@@ -48,8 +55,8 @@ Options:
 
 await main({
   root: path.resolve(process.cwd()),
-  scriptName: values.script,
-  ff: values.ff,
-  junitPath: values.junit,
+  scriptName: args.script,
+  ff: args.ff,
+  junitPath: args.junit,
   concurrency
 });
