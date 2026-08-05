@@ -22,6 +22,8 @@ export function envWithSpecReporter(env, junitDestPath) {
   return { ...rest, NODE_OPTIONS: `${existing}${SPEC_REPORTER_FLAGS}${junitFlags}` };
 }
 
+// Rethink this synchronous approach in case of very large package.json files, or huge amount of workspaces, 
+// but for now it's simpler than async and should be fine in practice.
 function readJson(file) {
   return JSON.parse(readFileSync(file, "utf8"));
 }

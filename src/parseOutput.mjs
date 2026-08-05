@@ -1,5 +1,6 @@
 const COUNT_INDEX = 1;
 
+const countTestsRegex = new RegExp(String.raw`ℹ tests (\d+)`);
 const countPassRegex = new RegExp(String.raw`ℹ pass (\d+)`);
 const countFailRegex = new RegExp(String.raw`ℹ fail (\d+)`);
 const countSkippedRegex = new RegExp(String.raw`ℹ skipped (\d+)`);
