@@ -11,18 +11,13 @@
   <a href="./LICENSE"><img src="https://img.shields.io/npm/l/sumlyzer.svg" alt="license" /></a>
 </p>
 
-## Ever lost a failing test in thousands of lines of workspace output?
 
-## Ever wished your npm workspaces stopped at the first failure?
+## Ever wished a faster feedback when testing your npm workspaces?
  
 `npm run test --workspaces --if-present` runs every workspace, but gives you no
-aggregated summary and no way to fail fast, an early failure just scrolls off
-screen once later workspaces print their own output.
+aggregated summary and no way to fail fast, no way to catch an early failure that scrolled off screen.
 
-Sumlyzer runs each workspace's test script, one by one or concurrently.
-Passing workspaces collapse to a single line, failing ones print just the
-relevant failure detail, and everything ends with an aggregated pass/fail
-summary table so nothing scrolls out of the terminal.
+Sumlyzer gives you all those possibilities and even more like concurrency or JUnit reports.
 
 ## Requirements
 
@@ -32,10 +27,13 @@ summary table so nothing scrolls out of the terminal.
 ## Scope
 
 This tool is intentionally narrow: **npm workspaces** running **`node:test`**.
+
 It orchestrates `npm run <script> --workspace=<path>` for every workspace that
 declares the target script, and it parses node test's own reporter output to build
-the summary. It does not support pnpm/yarn workspaces or other test runners
-(Jest, Vitest, Mocha etc.).
+the summary. 
+
+It does not support pnpm/yarn workspaces or other test runners
+(Jest, Vitest, Mocha etc.). (for the moment)
 
 ## Install
 
@@ -62,14 +60,12 @@ Options:
 | `-c, --concurrency <n>` | `1` | run up to `<n>` workspaces at once |
 | `-h, --help` | | print usage |
 
-Exit code is `1` if any workspace fails (or if the project has no
-workspaces), `0` otherwise, wire it straight into CI without extra parsing.
+Exit code is `1` if any workspace fails (even if every workspace's tests passed), `0` otherwise, wire it straight into CI without extra parsing.
 This also applies when `--junit` can't write its report.
-The exit code is `1` even if every workspace's tests passed.
 
 ## Features
 
-- Aggregated pass/fail summary table, so nothing scrolls out of the terminal
+- Aggregated pass/fail summary table.
 - Fail-fast (`--ff`): stop at the first failing workspace
 - Aggregated JUnit XML report (`--junit`), merging every workspace's own results
 - GitHub Actions log folding: each workspace's output collapsed into an
@@ -173,8 +169,7 @@ every workspace's own `node:test` results. Each workspace runs with `node:test`'
 built-in `junit` reporter enabled alongside the terminal one, and sumlyzer combines
 the resulting files into one document, prefixing every `<testsuite>` name with the
 workspace it came from so CI test-report UIs (GitLab, Jenkins, Azure DevOps, ...)
-can tell them apart. If `<path>` is an existing directory, the report is written
-to `<path>/junit.xml`:
+can tell them apart. 
 
 ```
 npx sumlyzer --junit reports/junit.xml
@@ -188,16 +183,15 @@ npx sumlyzer --junit reports/           # writes reports/junit.xml
 </testsuites>
 ```
 
-A workspace whose script never produces a junit file (for example,
-`--script` points at something that isn't `node:test`, or the workspace crashed
-before it could write one) is left out of the aggregated report and sumlyzer
+A workspace whose script never produces a junit file is left out of the aggregated report and sumlyzer
 prints a warning naming it.
 
 ### GitHub Actions log folding
 
 On GitHub Actions (detected via `GITHUB_ACTIONS=true`), each workspace's full
 `node:test` output is wrapped in a collapsible `::group::`/`::endgroup::`
-section instead of the terminal's collapsed-line-or-failure-detail format.
+section instead of the terminal's formal.
+
 This is automatic, no flag needed, and keeps the job log short by default
 while still letting you expand any workspace, passing or failing, to see its
 full suite output. 
@@ -209,9 +203,7 @@ only one whose log folding sumlyzer has actually verified end-to-end.
 
 `--concurrency <n>` runs up to `<n>` workspaces' scripts at the same time
 instead of one after another, which can noticeably cut wall-clock time on
-projects with many workspaces. There is no ordering dependency to worry about
-here: unlike a `build` script, one workspace's `node:test` run never depends
-on another workspace's test run, so nothing needs to be sequenced.
+projects with many workspaces.
 
 Since workspaces can now finish in any order, their output interleaves in
 whatever order they complete, rather than following the `workspaces` list
